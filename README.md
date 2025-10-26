@@ -1,5 +1,12 @@
 # gomac
 
+> [!IMPORTANT]  
+> - StatusChange counter does not work
+> - There are known limitations for port and mac scan > depends on SNMP OIDS on Switch > needs to be fully rebuild
+> - Testing module does not work
+
+---
+
 **gomac** is a lightweight SNMP-based switch monitoring tool written in Go.  
 It allows you to monitor switch ports and MAC addresses via a web interface.
 
@@ -104,10 +111,21 @@ The web interface will be available at [http://localhost:8080](http://localhost:
 
 ## Usage
 
-- Dashboard: View all switches, port status, and MAC addresses.
-- MAC Search: Search for a MAC address to see which switch and port it’s on.
-- Test: Test SNMP connectivity before adding switches to monitoring.
-- Admin: Add or remove switches and configure port counts.
+Dashboard: View all switches, port status, and MAC addresses.
+
+![](.assets/02-dashboard-ext.png)
+
+MAC Search: Search for a MAC address to see which switch and port it’s on.
+
+![](.assets/03-mac.png)
+
+Test: Test SNMP connectivity before adding switches to monitoring.
+
+![](.assets/04-test.png)
+
+Admin: Add or remove switches and configure port counts.
+
+![](.assets/05-management.png)
 
 ## Dependencies
 

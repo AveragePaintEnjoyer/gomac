@@ -1,5 +1,6 @@
 # Custom
 .backup/
+.DS_Store
 *.db
 gomac1910*
 
