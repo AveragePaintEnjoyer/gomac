@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>gomac1910</title>
+<style>
+body { font-family: monospace; background: #f0f0f0; color: #000; }
+h1 { font-size: 24px; margin-bottom: 20px; }
+.switch-box { padding: 10px; margin-bottom: 20px; background: #fff; border: 2px solid #000; }
+.switch-title { font-weight: bold; margin-bottom: 5px; cursor: pointer; }
+.port { 
+  width: 30px; 
+  height: 30px; 
+  text-align: center; 
+  line-height: 30px; 
+  border: 1px solid #000; 
+  cursor: pointer; 
+  font-size: 12px; 
+  text-decoration: none; 
+  color: #000; 
+  box-sizing: border-box;
+}
+.port.up { background: #0f0; }
+.port.down { background: #f00; }
+.port-details { display: none; margin-top: 5px; padding: 5px; border-top: 1px solid #000; background: #eee; }
+table { border-collapse: collapse; margin-top: 5px; width: 100%; }
+th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
+.up-text { color: green; font-weight: bold; }
+.down-text { color: red; font-weight: bold; }
+
+/* switch panel */
+.port-panel {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.port-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+  max-width: min(100%, calc(30px * 28 + 4px * 28)); /* dynamically scale up to ~56 ports */
+}
+
+.menu-bar {
+  background: #ddd;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+}
+
+.menu-bar a {
+  margin-right: 15px;
+  text-decoration: none;
+  color: #000;
+  font-weight: bold;
+}
+.menu-bar a:hover {
+  text-decoration: underline;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ipField = document.getElementById('ip');
+
+    ipField.addEventListener('input', () => {
+        let val = ipField.value;
+        // Remove invalid characters
+        val = val.replace(/[^0-9.]/g, '');
+        // Prevent multiple dots in a row
+        val = val.replace(/\.{2,}/g, '.');
+        // Split into octets and limit to 4
+        let octets = val.split('.').slice(0, 4);
+        // Clamp each octet to 0-255
+        octets = octets.map(oct => {
+            let n = parseInt(oct, 10);
+            if (isNaN(n)) n = 0;
+            if (n > 255) n = 255;
+            return n.toString();
+        });
+        ipField.value = octets.join('.');
+    });
+
+    ipField.addEventListener('blur', () => {
+        // Optional: pad to 3 digits per octet on blur
+        let octets = ipField.value.split('.').slice(0, 4);
+        octets = octets.map(oct => {
+            let n = parseInt(oct, 10);
+            if (isNaN(n)) n = 0;
+            if (n > 255) n = 255;
+            return n.toString().padStart(3, '0');
+        });
+        ipField.value = octets.join('.');
+    });
+});
+</script>
+</head>
+<body>
+<h1>gomac1910</h1>
+
+<div class="menu-bar">
+  <a href="/">Dashboard</a>
+  <a href="/mac">MAC Search</a>
+  <a href="/test">Connection Test</a>
+  <a href="/admin">Manage Switches</a>
+</div>
+
+<form method="POST" action="/test">
+  IP: <input id="ip" name="ip" type="text" class="border rounded px-2 py-1 w-full" required>
+  Community: <input name="community" value="{{.Community}}" oninput="formatCommunity(this)" required>
+  System: 
+  <select name="system">
+    <option value="generic" {{if eq .System "generic"}}selected{{end}}>Generic</option>
+    <option value="unifi" {{if eq .System "unifi"}}selected{{end}}>UniFi</option>
+  </select>
+  Port count: <input name="portcount" type="number" min="1" value="{{.PortCount}}" required>
+  <button type="submit">Test</button>
+</form>
+
+{{if .Results}}
+<table class="port-table">
+  <thead>
+    <tr><th>Port</th><th>Status</th><th>Status Changes</th><th>MAC / VLAN</th></tr>
+  </thead>
+  <tbody>
+    {{range .Results}}
+    <tr>
+      <td>{{.Index}}</td>
+      <td><span class="{{if eq .Status "UP"}}up-text{{else}}down-text{{end}}">{{.Status}}</span></td>
+      <td>{{.StatusChanges}}</td>
+      <td>
+        {{range .Macs}}{{.MAC}} / VLAN {{.VLAN}}<br>{{else}}No MACs{{end}}
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+
+</body>
+</html>

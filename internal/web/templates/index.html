@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>gomac1910</title>
+<style>
+body { font-family: monospace; background: #f0f0f0; color: #000; }
+h1 { font-size: 24px; margin-bottom: 20px; }
+.switch-box { padding: 10px; margin-bottom: 20px; background: #fff; border: 2px solid #000; }
+.switch-title { font-weight: bold; margin-bottom: 5px; cursor: pointer; }
+.port { 
+  width: 30px; 
+  height: 30px; 
+  text-align: center; 
+  line-height: 30px; 
+  border: 1px solid #000; 
+  cursor: pointer; 
+  font-size: 12px; 
+  text-decoration: none; 
+  color: #000; 
+  box-sizing: border-box;
+}
+.port.up { background: #0f0; }
+.port.down { background: #f00; }
+.port-details { display: none; margin-top: 5px; padding: 5px; border-top: 1px solid #000; background: #eee; }
+table { border-collapse: collapse; margin-top: 5px; width: 100%; }
+th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
+.up-text { color: green; font-weight: bold; }
+.down-text { color: red; font-weight: bold; }
+
+/* switch panel */
+.port-panel {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.port-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+  max-width: min(100%, calc(30px * 28 + 4px * 28)); /* dynamically scale up to ~56 ports */
+}
+
+.menu-bar {
+  background: #ddd;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+}
+
+.menu-bar a {
+  margin-right: 15px;
+  text-decoration: none;
+  color: #000;
+  font-weight: bold;
+}
+.menu-bar a:hover {
+  text-decoration: underline;
+}
+</style>
+<script>
+function togglePortDetail(switchId, portIndex) {
+  const divId = 'port-detail-' + switchId + '-' + portIndex;
+  const clickedDiv = document.getElementById(divId);
+
+  // Hide all other port detail divs
+  const allDetails = document.querySelectorAll('.port-details');
+  allDetails.forEach(div => {
+    if (div !== clickedDiv) {
+      div.style.display = 'none';
+    }
+  });
+
+  // Toggle the clicked one
+  if (clickedDiv.style.display === 'none' || clickedDiv.style.display === '') {
+    clickedDiv.style.display = 'block';
+  } else {
+    clickedDiv.style.display = 'none';
+  }
+}
+</script>
+</head>
+<body>
+<h1>gomac1910</h1>
+
+<div class="menu-bar">
+  <a href="/">Dashboard</a>
+  <a href="/mac">MAC Search</a>
+  <a href="/test">Connection Test</a>
+  <a href="/admin">Manage Switches</a>
+</div>
+
+{{range .Switches}}
+<div class="switch-box">
+  <div class="switch-title">{{.Switch.Name}} ({{.Switch.IPAddress}})</div>
+
+  <!-- Front panel layout: odd ports on top, even ports below -->
+  <div class="port-panel">
+    <div class="port-row">
+      {{range .Ports}}
+        {{if eq (mod .Index 2) 1}}
+          <div class="port {{if eq .Status "UP"}}up{{else}}down{{end}}"
+               onclick="togglePortDetail({{.SwitchID}}, {{.Index}})"
+               title="Port {{.Index}}">
+            {{.Index}}
+          </div>
+        {{end}}
+      {{end}}
+    </div>
+    <div class="port-row">
+      {{range .Ports}}
+        {{if eq (mod .Index 2) 0}}
+          <div class="port {{if eq .Status "UP"}}up{{else}}down{{end}}"
+               onclick="togglePortDetail({{.SwitchID}}, {{.Index}})"
+               title="Port {{.Index}}">
+            {{.Index}}
+          </div>
+        {{end}}
+      {{end}}
+    </div>
+  </div>
+
+  <!-- Port details hidden by default -->
+  {{range .Ports}}
+  <div class="port-details" id="port-detail-{{.SwitchID}}-{{.Index}}">
+    <p>Port {{.Index}} Status: <span class="{{if eq .Status "UP"}}up-text{{else}}down-text{{end}}">{{.Status}}</span></p>
+    <p>Status changes: {{.StatusChanges}}</p>
+    <h4>MAC Addresses</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>MAC</th>
+          <th>VLAN</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{if .Macs}}
+          {{range .Macs}}
+            <tr>
+              <td>{{.MAC}}</td>
+              <td>{{.VLAN}}</td>
+            </tr>
+          {{end}}
+        {{else}}
+          <tr><td colspan="2">No MACs</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+
+</div>
+{{end}}
+</body>
+</html>

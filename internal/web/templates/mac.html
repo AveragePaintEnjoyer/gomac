@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>gomac1910</title>
+<style>
+body { font-family: monospace; background: #f0f0f0; color: #000; }
+h1 { font-size: 24px; margin-bottom: 20px; }
+.switch-box { padding: 10px; margin-bottom: 20px; background: #fff; border: 2px solid #000; }
+.switch-title { font-weight: bold; margin-bottom: 5px; cursor: pointer; }
+.port { 
+  width: 30px; 
+  height: 30px; 
+  text-align: center; 
+  line-height: 30px; 
+  border: 1px solid #000; 
+  cursor: pointer; 
+  font-size: 12px; 
+  text-decoration: none; 
+  color: #000; 
+  box-sizing: border-box;
+}
+.port.up { background: #0f0; }
+.port.down { background: #f00; }
+.port-details { display: none; margin-top: 5px; padding: 5px; border-top: 1px solid #000; background: #eee; }
+table { border-collapse: collapse; margin-top: 5px; width: 100%; }
+th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
+.up-text { color: green; font-weight: bold; }
+.down-text { color: red; font-weight: bold; }
+
+/* switch panel */
+.port-panel {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.port-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+  max-width: min(100%, calc(30px * 28 + 4px * 28)); /* dynamically scale up to ~56 ports */
+}
+
+.menu-bar {
+  background: #ddd;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+}
+
+.menu-bar a {
+  margin-right: 15px;
+  text-decoration: none;
+  color: #000;
+  font-weight: bold;
+}
+.menu-bar a:hover {
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+
+<h1>gomac1910</h1>
+
+<div class="menu-bar">
+  <a href="/">Dashboard</a>
+  <a href="/mac">MAC Search</a>
+  <a href="/test">Connection Test</a>
+  <a href="/admin">Manage Switches</a>
+</div>
+
+<form method="POST" action="/mac">
+    <input type="text" id="mac-input" name="mac" placeholder="Enter MAC address" value="{{.Query}}" maxlength="17" required>
+    <button type="submit">Search</button>
+</form>
+
+{{if .Results}}
+<table>
+    <thead>
+        <tr>
+            <th>MAC Address</th>
+            <th>Switch</th>
+            <th>Port</th>
+            <th>VLAN</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Results}}
+        <tr>
+            <td>{{.MAC}}</td>
+            <td>{{.Switch}}</td>
+            <td>{{.PortIndex}}</td>
+            <td>{{.VLAN}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else if .Query}}
+<p>No results found for "{{.Query}}"</p>
+{{end}}
+
+
+
+<script>
+const macInput = document.getElementById('mac-input');
+
+macInput.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/[^0-9a-fA-F]/g, ''); // remove anything not hex
+    value = value.slice(0, 12); // max 12 hex chars
+    let formatted = '';
+    for (let i = 0; i < value.length; i++) {
+        formatted += value[i];
+        if (i % 2 === 1 && i < value.length - 1) {
+            formatted += ':';
+        }
+    }
+    e.target.value = formatted;
+});
+</script>
+</body>
+</html>

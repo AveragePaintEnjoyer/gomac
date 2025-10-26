@@ -1,0 +1,13 @@
+[Unit]
+Description=gomac SNMP Monitor
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/gomac
+ExecStart=/home/gomac/gomac
+Restart=always
+EnvironmentFile=/home/gomac/.env
+
+[Install]
+WantedBy=multi-user.target
