@@ -224,8 +224,8 @@ func pollSwitch(db *gorm.DB, sw Switch) {
 
 // ---------- MAIN LOOP ----------
 
-func StartBackgroundPolling(interval time.Duration) {
-	db, err := gorm.Open(sqlite.Open("go-mac.db"), &gorm.Config{})
+func StartBackgroundPolling(interval time.Duration, path string) {
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}

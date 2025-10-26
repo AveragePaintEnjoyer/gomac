@@ -20,44 +20,33 @@ The main purpose of go-mac is to help track and document complex or poorly docum
   - Polling interval
   - Database location
 
-## Installation from source
+## Additional requirements for compiling on Linux
 
-1. Clone the repository:
+**Make sure to install current supported go version from golang website directly on to your system.**
 
 ```bash
-git clone https://github.com/yourusername/go-mac.git
-cd go-mac
+sudo apt update
+sudo apt install build-essential libsqlite3-dev
 ```
 
-2. Set up .env file (example provided in .env.example):
+When compiling, use this flag:
 
 ```bash
-WEB_HOST=0.0.0.0
-WEB_PORT=8080
-POLL_INTERVAL=600
-DB_PATH=/tmp/gomac.db
-```
+su gomac
+cd /home/gomac/gomac
 
-3. Build the binary:
+go mod tidy
 
-```bash
+export CGO_ENABLED=1
 go build -o gomac ./cmd/server
 ```
-
-4. Run the server:
-
-```bash
-./gomac
-```
-
-The web interface will be available at [http://localhost:8080](http://localhost:8080).
 
 ## Linux & systemd
 
 1. Add user
 
 ```bash
-sudo useradd -r -m -d /home/gomac -s /usr/sbin/nologin go-mac
+sudo useradd -r -m -d /home/gomac gomac
 ```
 
 2. Complete [installation steps](#installation-from-source)
@@ -76,6 +65,42 @@ sudo systemctl enable gomac
 sudo systemctl start gomac
 sudo journalctl -u gomac -f 
 ```
+
+## Installation from source
+
+1. Clone the repository:
+
+```bash
+su gomac
+cd
+
+git clone https://github.com/AveragePaintEnjoyer/gomac
+cd gomac
+```
+
+2. Set up .env file (example provided in .env.example):
+
+```bash
+WEB_HOST=0.0.0.0
+WEB_PORT=8080
+POLL_INTERVAL=600
+DB_PATH=/home/gomac/gomac/gomac.db
+```
+
+3. Build the binary:
+
+```bash
+go mod tidy
+go build -o gomac ./cmd/server
+```
+
+4. Run the server:
+
+```bash
+./gomac
+```
+
+The web interface will be available at [http://localhost:8080](http://localhost:8080).
 
 ## Usage
 

@@ -37,7 +37,7 @@ func main() {
 	db.InitDB(dbPath)
 
 	// Start background SNMP poller
-	go poller.StartBackgroundPolling(time.Duration(pollIntervalSec) * time.Second)
+	go poller.StartBackgroundPolling(time.Duration(pollIntervalSec)*time.Second, dbPath)
 
 	// Setup template engine
 	engine := html.New("./internal/web/templates", ".html")

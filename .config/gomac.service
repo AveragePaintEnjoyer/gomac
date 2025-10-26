@@ -4,10 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/gomac
-ExecStart=/home/gomac/gomac
+User=gomac
+WorkingDirectory=/home/gomac/gomac
+ExecStart=/home/gomac/gomac/gomac
 Restart=always
-EnvironmentFile=/home/gomac/.env
+EnvironmentFile=/home/gomac/gomac/.env
 
 [Install]
 WantedBy=multi-user.target
