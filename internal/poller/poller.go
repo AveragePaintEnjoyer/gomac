@@ -179,14 +179,22 @@ func pollSwitch(db *gorm.DB, sw Switch) {
 		for idx, newState := range ports {
 			var existing PortStatus
 			tx := db.Where("switch_id = ? AND port_index = ?", sw.ID, idx).First(&existing)
+
+			// Increment only if the port state changed meaningfully
 			if tx.Error == nil {
 				if existing.Status != newState {
 					existing.Status = newState
 					existing.StatusChanges++
 					db.Save(&existing)
 				}
-			} else {
-				db.Create(&PortStatus{SwitchID: sw.ID, PortIndex: idx, Status: newState, StatusChanges: 0})
+			} else if tx.Error == gorm.ErrRecordNotFound {
+				// First time seeing this port, create record
+				db.Create(&PortStatus{
+					SwitchID:      sw.ID,
+					PortIndex:     idx,
+					Status:        newState,
+					StatusChanges: 0,
+				})
 			}
 		}
 	}

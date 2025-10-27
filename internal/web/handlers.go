@@ -41,10 +41,11 @@ func SetupRoutes(app *fiber.App) {
 				db.DB.Where("switch_id = ? AND port_index = ?", sw.ID, p.PortIndex).Find(&macs)
 
 				switchPorts = append(switchPorts, PortView{
-					Index:    p.PortIndex,
-					Status:   p.Status,
-					Macs:     macs,
-					SwitchID: sw.ID,
+					Index:         p.PortIndex,
+					Status:        p.Status,
+					StatusChanges: p.StatusChanges,
+					Macs:          macs,
+					SwitchID:      sw.ID,
 				})
 			}
 

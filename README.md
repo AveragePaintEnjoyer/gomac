@@ -1,7 +1,6 @@
 # gomac
 
 > [!IMPORTANT]  
-> - StatusChange counter does not work
 > - There are known limitations for port and mac scan > depends on SNMP OIDS on Switch > needs to be fully rebuild
 > - Testing module does not work
 
