@@ -86,7 +86,6 @@ function togglePortDetail(switchId, portIndex) {
 <div class="menu-bar">
   <a href="/">Dashboard</a>
   <a href="/mac">MAC Search</a>
-  <a href="/test">Connection Test</a>
   <a href="/admin">Manage Switches</a>
 </div>
 
@@ -123,7 +122,8 @@ function togglePortDetail(switchId, portIndex) {
   <!-- Port details hidden by default -->
   {{range .Ports}}
   <div class="port-details" id="port-detail-{{.SwitchID}}-{{.Index}}">
-    <p>Port {{.Index}} Status: <span class="{{if eq .Status "UP"}}up-text{{else}}down-text{{end}}">{{.Status}}</span></p>
+    <p>Port: {{.Name}}</p>
+    <p>Status: <span class="{{if eq .Status "UP"}}up-text{{else}}down-text{{end}}">{{.Status}}</span></p>
     <p>Status changes: {{.StatusChanges}}</p>
     <h4>MAC Addresses</h4>
     <table>

@@ -76,7 +76,6 @@ function togglePortDetail(switchId, portIndex) {
 <div class="menu-bar">
   <a href="/">Dashboard</a>
   <a href="/mac">MAC Search</a>
-  <a href="/test">Connection Test</a>
   <a href="/admin">Manage Switches</a>
 </div>
 
@@ -94,7 +93,6 @@ function togglePortDetail(switchId, portIndex) {
       <option value="unifi">UniFi</option>
     </select>
   </label><br>
-  <label>Port Count: <input type="number" name="portcount" min="1" required></label><br>
   <button class="add-btn" type="submit">Add Switch</button>
 </form>
 
@@ -106,7 +104,6 @@ function togglePortDetail(switchId, portIndex) {
         <th>IP Address</th>
         <th>Community</th>
         <th>System Type</th>
-        <th>Port Count</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -117,7 +114,6 @@ function togglePortDetail(switchId, portIndex) {
         <td>{{.IPAddress}}</td>
         <td>{{.Community}}</td>
         <td>{{.System}}</td>
-        <td>{{.PortCount}}</td>
         <td>
           <form action="/admin/delete/{{.ID}}" method="POST" onsubmit="return confirm('Delete this switch?');">
             <button>Delete</button>

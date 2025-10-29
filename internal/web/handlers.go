@@ -3,12 +3,8 @@ package web
 import (
 	"go-mac/internal/db"
 	"go-mac/internal/models"
-	"go-mac/internal/poller"
-	"strconv"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gosnmp/gosnmp"
 )
 
 func SetupRoutes(app *fiber.App) {
@@ -18,6 +14,7 @@ func SetupRoutes(app *fiber.App) {
 
 		type PortView struct {
 			Index         int
+			Name          string
 			Status        string
 			StatusChanges int
 			Macs          []models.MacEntry
@@ -42,6 +39,7 @@ func SetupRoutes(app *fiber.App) {
 
 				switchPorts = append(switchPorts, PortView{
 					Index:         p.PortIndex,
+					Name:          p.PortName,
 					Status:        p.Status,
 					StatusChanges: p.StatusChanges,
 					Macs:          macs,
@@ -105,78 +103,6 @@ func SetupRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Post("/test", func(c *fiber.Ctx) error {
-		ip := c.FormValue("ip")
-		community := c.FormValue("community")
-		system := c.FormValue("system")
-		portCountStr := c.FormValue("portcount")
-		portCount, _ := strconv.Atoi(portCountStr)
-
-		type PortResult struct {
-			Index         int
-			Status        string
-			StatusChanges int
-			Macs          []struct {
-				MAC  string
-				VLAN int
-			}
-		}
-
-		var results []PortResult
-
-		// --- SNMP Port Status ---
-		ports, err := poller.SnmpInterfaceWalk(ip, community, portCount)
-		if err == nil {
-			for i := 1; i <= portCount; i++ {
-				status := ports[i]
-				results = append(results, PortResult{
-					Index:  i,
-					Status: status,
-				})
-			}
-		}
-
-		// --- SNMP MAC Table ---
-		macWalk, err := poller.MacSNMPWalk(ip, community, system)
-		if err == nil {
-			for _, p := range results {
-				p.Macs = []struct {
-					MAC  string
-					VLAN int
-				}{}
-			}
-
-			for _, mac := range macWalk {
-				port := int(gosnmp.ToBigInt(mac.Value).Int64())
-				macOID := strings.TrimPrefix(mac.Name, ".")
-				vlan := poller.ExtractVLAN(macOID, system)
-				macDec := poller.OidTrimmer(macOID, system)
-				if system == "unifi" {
-					parts := strings.Split(macDec, ".")
-					if len(parts) > 1 {
-						macDec = strings.Join(parts[1:], ".")
-					}
-				}
-				macHex := poller.DeciMacToHex(macDec)
-
-				if macHex != "" && port >= 1 && port <= portCount {
-					results[port-1].Macs = append(results[port-1].Macs, struct {
-						MAC  string
-						VLAN int
-					}{MAC: macHex, VLAN: vlan})
-				}
-			}
-		}
-
-		return c.Render("test", fiber.Map{
-			"Results":   results,
-			"IP":        ip,
-			"Community": community,
-			"System":    system,
-			"PortCount": portCount,
-		})
-	})
-
 	// Admin form
 	app.Get("/admin", func(c *fiber.Ctx) error {
 		var switches []models.Switch
@@ -188,13 +114,11 @@ func SetupRoutes(app *fiber.App) {
 
 	// Handle form submit
 	app.Post("/admin/add", func(c *fiber.Ctx) error {
-		portCount, _ := strconv.Atoi(c.FormValue("portcount"))
 		s := models.Switch{
 			Name:      c.FormValue("name"),
 			IPAddress: c.FormValue("ip"),
 			Community: c.FormValue("community"),
 			System:    c.FormValue("system"),
-			PortCount: portCount,
 		}
 		db.DB.Create(&s)
 		return c.Redirect("/admin")

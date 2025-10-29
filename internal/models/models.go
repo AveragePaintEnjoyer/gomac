@@ -6,13 +6,13 @@ type Switch struct {
 	IPAddress string
 	Community string
 	System    string // "generic" or "unifi"
-	PortCount int
 }
 
 type PortStatus struct {
 	ID            uint `gorm:"primaryKey"`
 	SwitchID      uint
 	PortIndex     int
+	PortName      string
 	Status        string
 	StatusChanges int
 }
