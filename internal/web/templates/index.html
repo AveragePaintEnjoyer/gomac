@@ -101,7 +101,7 @@ function togglePortDetail(switchId, portIndex) {
           <div class="port {{if eq .Status "UP"}}up{{else}}down{{end}}"
                onclick="togglePortDetail({{.SwitchID}}, {{.Index}})"
                title="Port {{.Index}}">
-            {{.Index}}
+            {{.DisplayName}}
           </div>
         {{end}}
       {{end}}
@@ -112,7 +112,7 @@ function togglePortDetail(switchId, portIndex) {
           <div class="port {{if eq .Status "UP"}}up{{else}}down{{end}}"
                onclick="togglePortDetail({{.SwitchID}}, {{.Index}})"
                title="Port {{.Index}}">
-            {{.Index}}
+            {{.DisplayName}}
           </div>
         {{end}}
       {{end}}

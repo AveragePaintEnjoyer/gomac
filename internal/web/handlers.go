@@ -1,6 +1,8 @@
 package web
 
 import (
+	"regexp"
+
 	"go-mac/internal/db"
 	"go-mac/internal/models"
 
@@ -15,6 +17,7 @@ func SetupRoutes(app *fiber.App) {
 		type PortView struct {
 			Index         int
 			Name          string
+			DisplayName   string
 			Status        string
 			StatusChanges int
 			Macs          []models.MacEntry
@@ -28,18 +31,49 @@ func SetupRoutes(app *fiber.App) {
 
 		var viewData []SwitchView
 
+		// Precompiled regexes for speed
+		reSlotPort := regexp.MustCompile(`Slot:\s*\d+\s*Port:\s*(\d+)`)
+		rePortNum := regexp.MustCompile(`Port\s*:?(\d+)`)
+		reSFP := regexp.MustCompile(`SFP\+\d+`)
+		reSFPNum := regexp.MustCompile(`SFP\+?(\d+)`)
+		reCisco := regexp.MustCompile(`(?:GigabitEthernet|FastEthernet|TenGigabitEthernet)\d+\/(\d+)`)
+
 		for _, sw := range switches {
 			var ports []models.PortStatus
-			db.DB.Where("switch_id = ?", sw.ID).Order("port_index asc").Find(&ports)
+			// Only load Ethernet ports
+			db.DB.Where("switch_id = ? AND if_type = ?", sw.ID, "ethernet-csmacd").
+				Order("port_index asc").
+				Find(&ports)
 
 			var switchPorts []PortView
 			for _, p := range ports {
 				var macs []models.MacEntry
 				db.DB.Where("switch_id = ? AND port_index = ?", sw.ID, p.PortIndex).Find(&macs)
 
+				displayName := p.PortName // default
+
+				switch {
+				case reSlotPort.MatchString(p.PortName):
+					match := reSlotPort.FindStringSubmatch(p.PortName)
+					displayName = match[1]
+				case rePortNum.MatchString(p.PortName):
+					match := rePortNum.FindStringSubmatch(p.PortName)
+					displayName = match[1]
+				case reSFP.MatchString(p.PortName):
+					if reSFPNum.MatchString(p.PortName) {
+						num := reSFPNum.FindStringSubmatch(p.PortName)[1]
+						displayName = "s" + num
+					} else {
+						displayName = "sfp"
+					}
+				case reCisco.MatchString(p.PortName):
+					displayName = reCisco.FindStringSubmatch(p.PortName)[1]
+				}
+
 				switchPorts = append(switchPorts, PortView{
 					Index:         p.PortIndex,
 					Name:          p.PortName,
+					DisplayName:   displayName,
 					Status:        p.Status,
 					StatusChanges: p.StatusChanges,
 					Macs:          macs,
