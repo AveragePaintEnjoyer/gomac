@@ -15,6 +15,7 @@ type PortStatus struct {
 	PortName      string
 	Status        string
 	StatusChanges int
+	IfType        string
 }
 
 type MacEntry struct {

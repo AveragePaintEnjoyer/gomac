@@ -24,10 +24,46 @@ var operState = map[int]string{
 	7: "LOWER_LAYER_DOWN",
 }
 
+var intTypeNum = map[int]string{
+	1:  "other",
+	2:  "regular1822",
+	3:  "hdh1822",
+	4:  "ddn-x25",
+	5:  "rfc877-x25",
+	6:  "ethernet-csmacd",
+	7:  "iso88023-csmacd",
+	8:  "iso88024-tokenBus",
+	9:  "iso88025-tokenRing",
+	10: "iso88026-man",
+	11: "starLan",
+	12: "proteon-10Mbit",
+	13: "proteon-80Mbit",
+	14: "hyperchannel",
+	15: "fddi",
+	16: "lapb",
+	17: "sdlc",
+	18: "ds1",
+	19: "e1",
+	20: "basicISDN",
+	21: "primaryISDN",
+	22: "propPointToPointSerial",
+	23: "ppp",
+	24: "softwareLoopback",
+	25: "eon",
+	26: "ethernet-3Mbit",
+	27: "nsip",
+	29: "slip",
+	30: "ultra",
+	31: "ds3",
+	32: "sip",
+	33: "frame-relay",
+}
+
 // ---------- SNMP FUNCTIONS ----------
 
-func SnmpInterfaces(host, community string) (map[int]string, map[int]string, error) {
+func SnmpInterfaces(host, community string) (map[int]string, map[int]string, map[int]string, error) {
 	ifDescrOID := "1.3.6.1.2.1.2.2.1.2"
+	ifTypeOID := "1.3.6.1.2.1.2.2.1.3"
 	ifOperOID := "1.3.6.1.2.1.2.2.1.8"
 
 	g := &gosnmp.GoSNMP{
@@ -40,10 +76,11 @@ func SnmpInterfaces(host, community string) (map[int]string, map[int]string, err
 		MaxRepetitions: 50,
 	}
 	if err := g.Connect(); err != nil {
-		return nil, nil, fmt.Errorf("SNMP connect failed: %v", err)
+		return nil, nil, nil, fmt.Errorf("SNMP connect failed: %v", err)
 	}
 	defer g.Conn.Close()
 
+	// Interfaces + description
 	descrs := make(map[int]string)
 	if err := g.BulkWalk(ifDescrOID, func(pdu gosnmp.SnmpPDU) error {
 		oidClean := strings.TrimPrefix(pdu.Name, ".") // remove leading dot
@@ -67,9 +104,10 @@ func SnmpInterfaces(host, community string) (map[int]string, map[int]string, err
 		descrs[idx] = name
 		return nil
 	}); err != nil {
-		return nil, nil, fmt.Errorf("ifDescr walk error: %v", err)
+		return nil, nil, nil, fmt.Errorf("ifDescr walk error: %v", err)
 	}
 
+	// Interface status
 	statuses := make(map[int]string)
 	if err := g.BulkWalk(ifOperOID, func(pdu gosnmp.SnmpPDU) error {
 		// Extract interface index from OID
@@ -103,10 +141,46 @@ func SnmpInterfaces(host, community string) (map[int]string, map[int]string, err
 		statuses[idx] = state
 		return nil
 	}); err != nil {
-		return nil, nil, fmt.Errorf("ifOperStatus walk error: %v", err)
+		return nil, nil, nil, fmt.Errorf("ifOperStatus walk error: %v", err)
 	}
 
-	return descrs, statuses, nil
+	inttype := make(map[int]string)
+	if err := g.BulkWalk(ifTypeOID, func(pdu gosnmp.SnmpPDU) error {
+		// Extract interface index from OID
+		idxStr := strings.TrimPrefix(pdu.Name, ".")        // remove leading dot
+		idxStr = strings.TrimPrefix(idxStr, ifTypeOID+".") // remove OID prefix
+		idx, err := strconv.Atoi(idxStr)
+		if err != nil {
+			fmt.Printf("Skipping OID %s, cannot parse index: %v\n", pdu.Name, err)
+			return nil
+		}
+
+		// Convert SNMP value to integer
+		val := 0
+		switch v := pdu.Value.(type) {
+		case int:
+			val = v
+		case uint:
+			val = int(v)
+		case int64:
+			val = int(v)
+		case uint64:
+			val = int(v)
+		default:
+			val = int(gosnmp.ToBigInt(pdu.Value).Int64())
+		}
+
+		iType, ok := intTypeNum[val]
+		if !ok {
+			iType = fmt.Sprintf("UNKNOWN(%d)", val)
+		}
+		inttype[idx] = iType
+		return nil
+	}); err != nil {
+		return nil, nil, nil, fmt.Errorf("ifOperStatus walk error: %v", err)
+	}
+
+	return descrs, statuses, inttype, nil
 }
 
 func MacSNMPWalk(host, community, system string) ([]gosnmp.SnmpPDU, error) {
@@ -186,7 +260,7 @@ func ExtractVLAN(oid, system string) int {
 func pollSwitch(db *gorm.DB, sw models.Switch) {
 	fmt.Printf("Polling switch %s (%s)\n", sw.Name, sw.IPAddress)
 
-	descrs, statuses, err := SnmpInterfaces(sw.IPAddress, sw.Community)
+	descrs, statuses, inttype, err := SnmpInterfaces(sw.IPAddress, sw.Community)
 	if err != nil {
 		fmt.Printf("Error polling interfaces: %v\n", err)
 		return
@@ -203,6 +277,11 @@ func pollSwitch(db *gorm.DB, sw models.Switch) {
 			status = "UNKNOWN"
 		}
 
+		interfacetype, ok2 := inttype[idx]
+		if !ok2 {
+			interfacetype = "UNKNOWN"
+		}
+
 		var iface models.PortStatus
 		tx := db.Where("switch_id = ? AND port_index = ?", sw.ID, idx).First(&iface)
 		if tx.Error == nil {
@@ -216,6 +295,10 @@ func pollSwitch(db *gorm.DB, sw models.Switch) {
 				iface.PortName = name
 				updated = true
 			}
+			if iface.IfType != interfacetype {
+				iface.IfType = interfacetype
+				updated = true
+			}
 			if updated {
 				db.Save(&iface)
 			}
@@ -225,6 +308,7 @@ func pollSwitch(db *gorm.DB, sw models.Switch) {
 				PortIndex: idx,
 				PortName:  name,
 				Status:    status,
+				IfType:    interfacetype,
 			})
 		}
 	}
