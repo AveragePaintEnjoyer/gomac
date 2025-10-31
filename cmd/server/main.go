@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go-mac/internal/db"
+	"go-mac/internal/oid"
 	"go-mac/internal/poller"
 	"go-mac/internal/web"
 
@@ -32,6 +33,10 @@ func main() {
 	port := getEnv("WEB_PORT", "8080")
 	pollIntervalSec, _ := strconv.Atoi(getEnv("POLL_INTERVAL", "600"))
 	dbPath := getEnv("DB_PATH", "/tmp/gomac1910.db")
+
+	if err := oid.Load("snmp.json"); err != nil {
+		log.Fatal("Failed to load SNMP maps:", err)
+	}
 
 	// Initialize database
 	db.InitDB(dbPath)

@@ -93,19 +93,15 @@ sudo journalctl -u gomac -f
 
 Dashboard: View all switches, port status, and MAC addresses.
 
-![](.assets/02-dashboard-ext.png)
+![](.assets/01-dashboard-ext.png)
 
 MAC Search: Search for a MAC address to see which switch and port it’s on.
 
-![](.assets/03-mac.png)
-
-Test: Test SNMP connectivity before adding switches to monitoring.
-
-![](.assets/04-test.png)
+![](.assets/02-mac.png)
 
 Admin: Add or remove switches and configure port counts.
 
-![](.assets/05-management.png)
+![](.assets/03-manage.png)
 
 ## Dependencies
 

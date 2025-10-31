@@ -12,52 +12,8 @@ import (
 	"gorm.io/gorm"
 
 	"go-mac/internal/models"
+	"go-mac/internal/oid"
 )
-
-var operState = map[int]string{
-	1: "UP",
-	2: "DOWN",
-	3: "TESTING",
-	4: "UNKNOWN",
-	5: "DORMANT",
-	6: "NOT_PRESENT",
-	7: "LOWER_LAYER_DOWN",
-}
-
-var intTypeNum = map[int]string{
-	1:  "other",
-	2:  "regular1822",
-	3:  "hdh1822",
-	4:  "ddn-x25",
-	5:  "rfc877-x25",
-	6:  "ethernet-csmacd",
-	7:  "iso88023-csmacd",
-	8:  "iso88024-tokenBus",
-	9:  "iso88025-tokenRing",
-	10: "iso88026-man",
-	11: "starLan",
-	12: "proteon-10Mbit",
-	13: "proteon-80Mbit",
-	14: "hyperchannel",
-	15: "fddi",
-	16: "lapb",
-	17: "sdlc",
-	18: "ds1",
-	19: "e1",
-	20: "basicISDN",
-	21: "primaryISDN",
-	22: "propPointToPointSerial",
-	23: "ppp",
-	24: "softwareLoopback",
-	25: "eon",
-	26: "ethernet-3Mbit",
-	27: "nsip",
-	29: "slip",
-	30: "ultra",
-	31: "ds3",
-	32: "sip",
-	33: "frame-relay",
-}
 
 // ---------- SNMP FUNCTIONS ----------
 
@@ -134,7 +90,7 @@ func SnmpInterfaces(host, community string) (map[int]string, map[int]string, map
 			val = int(gosnmp.ToBigInt(pdu.Value).Int64())
 		}
 
-		state, ok := operState[val]
+		state, ok := oid.OperState[val]
 		if !ok {
 			state = fmt.Sprintf("UNKNOWN(%d)", val)
 		}
@@ -170,7 +126,7 @@ func SnmpInterfaces(host, community string) (map[int]string, map[int]string, map
 			val = int(gosnmp.ToBigInt(pdu.Value).Int64())
 		}
 
-		iType, ok := intTypeNum[val]
+		iType, ok := oid.IntTypeNum[val]
 		if !ok {
 			iType = fmt.Sprintf("UNKNOWN(%d)", val)
 		}

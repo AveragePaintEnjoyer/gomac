@@ -1,10 +1,9 @@
 package web
 
 import (
-	"regexp"
-
 	"go-mac/internal/db"
 	"go-mac/internal/models"
+	"go-mac/internal/portname"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -31,17 +30,12 @@ func SetupRoutes(app *fiber.App) {
 
 		var viewData []SwitchView
 
-		// Precompiled regexes for speed
-		reSlotPort := regexp.MustCompile(`Slot:\s*\d+\s*Port:\s*(\d+)`)
-		rePortNum := regexp.MustCompile(`Port\s*:?(\d+)`)
-		reSFP := regexp.MustCompile(`SFP\+\d+`)
-		reSFPNum := regexp.MustCompile(`SFP\+?(\d+)`)
-		reCisco := regexp.MustCompile(`(?:GigabitEthernet|FastEthernet|TenGigabitEthernet)\d+\/(\d+)`)
-
 		for _, sw := range switches {
 			var ports []models.PortStatus
 			// Only load Ethernet ports
-			db.DB.Where("switch_id = ? AND if_type = ?", sw.ID, "ethernet-csmacd").
+			allowedTypes := []string{"ethernetCsmacd", "gigabitEthernet"}
+			db.DB.
+				Where("switch_id = ? AND if_type IN ?", sw.ID, allowedTypes).
 				Order("port_index asc").
 				Find(&ports)
 
@@ -50,25 +44,7 @@ func SetupRoutes(app *fiber.App) {
 				var macs []models.MacEntry
 				db.DB.Where("switch_id = ? AND port_index = ?", sw.ID, p.PortIndex).Find(&macs)
 
-				displayName := p.PortName // default
-
-				switch {
-				case reSlotPort.MatchString(p.PortName):
-					match := reSlotPort.FindStringSubmatch(p.PortName)
-					displayName = match[1]
-				case rePortNum.MatchString(p.PortName):
-					match := rePortNum.FindStringSubmatch(p.PortName)
-					displayName = match[1]
-				case reSFP.MatchString(p.PortName):
-					if reSFPNum.MatchString(p.PortName) {
-						num := reSFPNum.FindStringSubmatch(p.PortName)[1]
-						displayName = "s" + num
-					} else {
-						displayName = "sfp"
-					}
-				case reCisco.MatchString(p.PortName):
-					displayName = reCisco.FindStringSubmatch(p.PortName)[1]
-				}
+				displayName := portname.Normalize(p.PortName)
 
 				switchPorts = append(switchPorts, PortView{
 					Index:         p.PortIndex,
