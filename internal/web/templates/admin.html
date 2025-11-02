@@ -4,21 +4,18 @@
 <meta charset="UTF-8">
 <title>gomac</title>
 <style>
-body { font-family: monospace; background: #f0f0f0; color: #000; }
+body {
+  font-family: monospace;
+  background: #f0f0f0;
+  color: #000;
+}
 h1 { font-size: 24px; margin-bottom: 20px; }
 .switch-box { padding: 10px; margin-bottom: 20px; background: #fff; border: 2px solid #000; }
 .switch-title { font-weight: bold; margin-bottom: 5px; cursor: pointer; }
-.port { 
-  width: 30px; 
-  height: 30px; 
-  text-align: center; 
-  line-height: 30px; 
-  border: 1px solid #000; 
-  cursor: pointer; 
-  font-size: 12px; 
-  text-decoration: none; 
-  color: #000; 
-  box-sizing: border-box;
+.port {
+  width: 30px; height: 30px; text-align: center; line-height: 30px;
+  border: 1px solid #000; cursor: pointer; font-size: 10px;
+  text-decoration: none; color: #000; box-sizing: border-box;
 }
 .port.up { background: #0f0; }
 .port.down { background: #f00; }
@@ -28,35 +25,48 @@ th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
 .up-text { color: green; font-weight: bold; }
 .down-text { color: red; font-weight: bold; }
 
-/* switch panel */
-.port-panel {
-  display: inline-block;
-  margin-bottom: 8px;
-}
-
+.port-panel { display: inline-block; margin-bottom: 8px; }
 .port-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: flex-start;
-  max-width: min(100%, calc(30px * 28 + 4px * 28)); /* dynamically scale up to ~56 ports */
+  display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start;
+  max-width: min(100%, calc(30px * 28 + 4px * 28));
 }
 
 .menu-bar {
   background: #ddd;
   padding: 5px 10px;
   margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-
 .menu-bar a {
-  margin-right: 15px;
-  text-decoration: none;
-  color: #000;
-  font-weight: bold;
+  margin-right: 15px; text-decoration: none; color: #000; font-weight: bold;
 }
-.menu-bar a:hover {
-  text-decoration: underline;
+.menu-bar a:hover { text-decoration: underline; }
+.toggle-btn {
+  cursor: pointer; font-weight: bold; background: #ccc;
+  padding: 4px 8px; border-radius: 4px;
 }
+.toggle-btn:hover { background: #bbb; }
+
+/* --- DARK MODE --- */
+body.dark {
+  background: #121212;
+  color: #eee;
+}
+body.dark .switch-box {
+  background: #1e1e1e;
+  border-color: #555;
+}
+body.dark .menu-bar {
+  background: #333;
+}
+body.dark .menu-bar a { color: #eee; }
+body.dark .toggle-btn { background: #444; color: #fff; }
+body.dark .port { border-color: #555; color: #fff; }
+body.dark .port.up { background: rgb(0, 200, 0); }
+body.dark .port.down { background: rgb(200, 0, 0); }
+body.dark .port-details { background: #222; border-color: #444; }
 </style>
 <script>
 function togglePortDetail(switchId, portIndex) {
@@ -68,15 +78,29 @@ function togglePortDetail(switchId, portIndex) {
     div.style.display = 'none';
   }
 }
+
+function toggleDarkMode() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+}
+
+window.onload = function() {
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark');
+  }
+};
 </script>
 </head>
 <body>
 <h1>gomac</h1>
 
 <div class="menu-bar">
-  <a href="/">Dashboard</a>
-  <a href="/mac">MAC Search</a>
-  <a href="/admin">Manage Switches</a>
+  <div>
+    <a href="/">Dashboard</a>
+    <a href="/mac">MAC Search</a>
+    <a href="/admin">Manage Switches</a>
+  </div>
+  <div class="toggle-btn" onclick="toggleDarkMode()">Dark Mode</div>
 </div>
 
 <br>
