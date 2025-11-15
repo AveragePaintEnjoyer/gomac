@@ -12,7 +12,7 @@ The main purpose of go-mac is to help track and document complex or poorly docum
 - Tracks MAC addresses on each port, including VLANs (if supported)
 - Web dashboard displaying switches and ports in a "switch front panel" style
 - Clickable ports to view detailed status and MAC tables
-- Admin interface to add, remove, or edit switches
+- Admin interface to add, remove, or edit switches and sites
 - MAC search page for finding which switch/port a MAC address is on
 - Configurable via `.env` for:
   - Web server port
