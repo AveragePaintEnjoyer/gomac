@@ -22,4 +22,11 @@ func InitDB(path string) {
 	if err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
+
+	// Backfill empty site values
+	if err := DB.Model(&models.Switch{}).
+		Where("site IS NULL OR site = ''").
+		Updates(map[string]interface{}{"site": "default"}).Error; err != nil {
+		log.Printf("Failed to backfill Switch.site: %v", err)
+	}
 }

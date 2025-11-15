@@ -19,6 +19,7 @@ h1 { font-size: 24px; margin-bottom: 20px; }
 }
 .port.up { background: #0f0; }
 .port.down { background: #f00; }
+.port.flap { background: rgb(255, 120, 0); }
 .port-details { display: none; margin-top: 5px; padding: 5px; border-top: 1px solid #000; background: #eee; }
 table { border-collapse: collapse; margin-top: 5px; width: 100%; }
 th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
@@ -30,7 +31,18 @@ th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
   display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start;
   max-width: min(100%, calc(30px * 28 + 4px * 28));
 }
-
+#siteSelector {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  cursor: pointer;
+}
+#siteSelector:hover {
+  background: #e0e0e0;
+}
 .menu-bar {
   background: #ddd;
   padding: 5px 10px;
@@ -44,10 +56,17 @@ th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
 }
 .menu-bar a:hover { text-decoration: underline; }
 .toggle-btn {
-  cursor: pointer; font-weight: bold; background: #ccc;
-  padding: 4px 8px; border-radius: 4px;
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  cursor: pointer;
 }
-.toggle-btn:hover { background: #bbb; }
+.toggle-btn:hover {
+  background: #e0e0e0;
+}
 
 /* --- DARK MODE --- */
 body.dark {
@@ -62,11 +81,27 @@ body.dark .menu-bar {
   background: #333;
 }
 body.dark .menu-bar a { color: #eee; }
-body.dark .toggle-btn { background: #444; color: #fff; }
+body.dark .toggle-btn {
+  background: #1e1e1e;
+  color: #eee;
+  border-color: #555;
+}
+body.dark .toggle-btn:hover {
+  background: #2a2a2a;
+}
 body.dark .port { border-color: #555; color: #fff; }
 body.dark .port.up { background: rgb(0, 200, 0); }
 body.dark .port.down { background: rgb(200, 0, 0); }
+body.dark .port.flap { background: rgb(255, 120, 0); }
 body.dark .port-details { background: #222; border-color: #444; }
+body.dark #siteSelector {
+  background: #1e1e1e;
+  color: #eee;
+  border-color: #555;
+}
+body.dark #siteSelector:hover {
+  background: #2a2a2a;
+}
 </style>
 <script>
 function togglePortDetail(switchId, portIndex) {
@@ -94,10 +129,32 @@ function toggleDarkMode() {
   localStorage.setItem('darkMode', document.body.classList.contains('dark'));
 }
 
-window.onload = function() {
+function changeSite() {
+  const site = document.getElementById("siteSelector").value;
+  localStorage.setItem("activeSite", site);
+
+  document.querySelectorAll(".switch-box").forEach(box => {
+    if (box.dataset.site === site) box.style.display = "block";
+    else box.style.display = "none";
+  });
+}
+
+window.onload = function () {
+  // Restore dark mode
   if (localStorage.getItem('darkMode') === 'true') {
     document.body.classList.add('dark');
   }
+
+  // Restore last selected site
+  const savedSite = localStorage.getItem("activeSite");
+  const selector = document.getElementById("siteSelector");
+
+  if (savedSite) {
+    selector.value = savedSite;
+  }
+
+  // Apply site filter
+  changeSite();
 };
 </script>
 </head>
@@ -111,11 +168,20 @@ window.onload = function() {
     <a href="/mac">MAC Search</a>
     <a href="/admin">Manage Switches</a>
   </div>
-  <div class="toggle-btn" onclick="toggleDarkMode()">Dark Mode</div>
+
+  <div style="display:flex; align-items:center; gap:8px;">
+    <select id="siteSelector" onchange="changeSite()">
+      {{range .Sites}}
+        <option value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+
+    <div class="toggle-btn" onclick="toggleDarkMode()">Dark Mode</div>
+  </div>
 </div>
 
 {{range .Switches}}
-<div class="switch-box">
+<div class="switch-box" data-site="{{.Switch.Site}}">
   <div class="switch-title">{{.Switch.Name}} ({{.Switch.IPAddress}})</div>
 
   <!-- Front panel layout: odd ports on top, even ports below -->
@@ -123,9 +189,7 @@ window.onload = function() {
     <div class="port-row">
       {{range .Ports}}
         {{if eq (mod .Index 2) 1}}
-          <div class="port {{if eq .Status "UP"}}up{{else}}down{{end}}"
-               onclick="togglePortDetail({{.SwitchID}}, {{.Index}})"
-               title="Port {{.Index}}">
+          <div class="port {{if eq .Status "UP"}} up {{else if and (eq .Status "DOWN") (gt .StatusChanges 0)}} flap {{else}} down {{end}}" onclick="togglePortDetail({{.SwitchID}}, {{.Index}})" title="Port {{.Index}}">
             {{.DisplayName}}
           </div>
         {{end}}
@@ -134,9 +198,7 @@ window.onload = function() {
     <div class="port-row">
       {{range .Ports}}
         {{if eq (mod .Index 2) 0}}
-          <div class="port {{if eq .Status "UP"}}up{{else}}down{{end}}"
-               onclick="togglePortDetail({{.SwitchID}}, {{.Index}})"
-               title="Port {{.Index}}">
+          <div class="port {{if eq .Status "UP"}} up {{else if and (eq .Status "DOWN") (gt .StatusChanges 0)}} flap {{else}} down {{end}}" onclick="togglePortDetail({{.SwitchID}}, {{.Index}})" title="Port {{.Index}}">
             {{.DisplayName}}
           </div>
         {{end}}

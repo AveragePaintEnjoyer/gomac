@@ -11,6 +11,23 @@ body {
 }
 h1 { font-size: 24px; margin-bottom: 20px; }
 .switch-box { padding: 10px; margin-bottom: 20px; background: #fff; border: 2px solid #000; }
+form.switch-box label {
+  display: block;
+  margin-bottom: 3px;
+}
+.form-input {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  box-sizing: border-box;
+}
+form.switch-box .add-btn {
+  margin-top: 8px;
+  padding: 6px 10px;
+}
 .switch-title { font-weight: bold; margin-bottom: 5px; cursor: pointer; }
 .port {
   width: 30px; height: 30px; text-align: center; line-height: 30px;
@@ -19,6 +36,7 @@ h1 { font-size: 24px; margin-bottom: 20px; }
 }
 .port.up { background: #0f0; }
 .port.down { background: #f00; }
+.port.flap { background: rgb(255, 120, 0); }
 .port-details { display: none; margin-top: 5px; padding: 5px; border-top: 1px solid #000; background: #eee; }
 table { border-collapse: collapse; margin-top: 5px; width: 100%; }
 th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
@@ -30,7 +48,30 @@ th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
   display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start;
   max-width: min(100%, calc(30px * 28 + 4px * 28));
 }
-
+#siteSelector {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  cursor: pointer;
+}
+#siteSelector:hover {
+  background: #e0e0e0;
+}
+#formInput {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  cursor: pointer;
+}
+#formInput:hover {
+  background: #e0e0e0;
+}
 .menu-bar {
   background: #ddd;
   padding: 5px 10px;
@@ -44,10 +85,17 @@ th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
 }
 .menu-bar a:hover { text-decoration: underline; }
 .toggle-btn {
-  cursor: pointer; font-weight: bold; background: #ccc;
-  padding: 4px 8px; border-radius: 4px;
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  cursor: pointer;
 }
-.toggle-btn:hover { background: #bbb; }
+.toggle-btn:hover {
+  background: #e0e0e0;
+}
 
 /* --- DARK MODE --- */
 body.dark {
@@ -62,11 +110,35 @@ body.dark .menu-bar {
   background: #333;
 }
 body.dark .menu-bar a { color: #eee; }
-body.dark .toggle-btn { background: #444; color: #fff; }
+body.dark .toggle-btn {
+  background: #1e1e1e;
+  color: #eee;
+  border-color: #555;
+}
+body.dark .toggle-btn:hover {
+  background: #2a2a2a;
+}
 body.dark .port { border-color: #555; color: #fff; }
 body.dark .port.up { background: rgb(0, 200, 0); }
 body.dark .port.down { background: rgb(200, 0, 0); }
+body.dark .port.flap { background: rgb(255, 120, 0); }
 body.dark .port-details { background: #222; border-color: #444; }
+body.dark #siteSelector {
+  background: #1e1e1e;
+  color: #eee;
+  border-color: #555;
+}
+body.dark #siteSelector:hover {
+  background: #2a2a2a;
+}
+body.dark #formInput {
+  background: #1e1e1e;
+  color: #eee;
+  border-color: #555;
+}
+body.dark #formInput:hover {
+  background: #2a2a2a;
+}
 </style>
 <script>
 function togglePortDetail(switchId, portIndex) {
@@ -108,16 +180,31 @@ window.onload = function() {
 <!-- Add Switch Form -->
 <form action="/admin/add" method="POST" class="switch-box">
   <h2 class="switch-title">Add Switch</h2>
-  <label>Name: <input type="text" name="name" required></label><br>
-  <label>IP Address: <input type="text" name="ip" required></label><br>
-  <label>Community: <input type="text" name="community" value="public"></label><br>
+
+  <label>Name:
+    <input class="form-input" type="text" name="name" required>
+  </label>
+
+  <label>IP Address:
+    <input class="form-input" type="text" name="ip" required>
+  </label>
+
+  <label>Community:
+    <input class="form-input" type="text" name="community" value="public">
+  </label>
+
   <label>System Type:
-    <select name="system">
+    <select name="system" class="form-input">
       <option value="generic">Generic</option>
       <option value="unifi">UniFi</option>
     </select>
-  </label><br>
-  <button class="add-btn" type="submit">Add Switch</button>
+  </label>
+
+  <label>Site:
+    <input class="form-input" type="text" name="site" value="default" required>
+  </label>
+
+  <button class="form-input add-btn" type="submit">Add Switch</button>
 </form>
 
 <div class="switch-box">
@@ -128,6 +215,7 @@ window.onload = function() {
         <th>IP Address</th>
         <th>Community</th>
         <th>System Type</th>
+        <th>Site</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -138,9 +226,10 @@ window.onload = function() {
         <td>{{.IPAddress}}</td>
         <td>{{.Community}}</td>
         <td>{{.System}}</td>
+        <td>{{.Site}}</td>
         <td>
           <form action="/admin/delete/{{.ID}}" method="POST" onsubmit="return confirm('Delete this switch?');">
-            <button>Delete</button>
+            <button id="formInput">Delete</button>
           </form>
         </td>
       </tr>

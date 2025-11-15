@@ -6,6 +6,7 @@ type Switch struct {
 	IPAddress string
 	Community string
 	System    string // "generic" or "unifi"
+	Site      string `gorm:"default:'default'"`
 }
 
 type PortStatus struct {

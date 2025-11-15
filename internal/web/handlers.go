@@ -13,6 +13,20 @@ func SetupRoutes(app *fiber.App) {
 		var switches []models.Switch
 		db.DB.Find(&switches)
 
+		// Collect site names
+		siteSet := map[string]struct{}{}
+		for _, sw := range switches {
+			if sw.Site == "" {
+				sw.Site = "default"
+			}
+			siteSet[sw.Site] = struct{}{}
+		}
+
+		var sites []string
+		for s := range siteSet {
+			sites = append(sites, s)
+		}
+
 		type PortView struct {
 			Index         int
 			Name          string
@@ -32,10 +46,9 @@ func SetupRoutes(app *fiber.App) {
 
 		for _, sw := range switches {
 			var ports []models.PortStatus
-			// Only load Ethernet ports
 			allowedTypes := []string{"ethernetCsmacd", "gigabitEthernet"}
-			db.DB.
-				Where("switch_id = ? AND if_type IN ?", sw.ID, allowedTypes).
+
+			db.DB.Where("switch_id = ? AND if_type IN ?", sw.ID, allowedTypes).
 				Order("port_index asc").
 				Find(&ports)
 
@@ -65,6 +78,7 @@ func SetupRoutes(app *fiber.App) {
 
 		return c.Render("index", fiber.Map{
 			"Switches": viewData,
+			"Sites":    sites,
 		})
 	})
 
@@ -129,6 +143,7 @@ func SetupRoutes(app *fiber.App) {
 			IPAddress: c.FormValue("ip"),
 			Community: c.FormValue("community"),
 			System:    c.FormValue("system"),
+			Site:      c.FormValue("site"),
 		}
 		db.DB.Create(&s)
 		return c.Redirect("/admin")
